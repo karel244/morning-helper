@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>朝早流程助手 v2</title>
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --good: #16a34a;
+      --warn: #ea580c;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 8px 0 6px;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+    }
+
+    .step-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .status.waiting {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .step-name {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin: 10px 0 8px;
+    }
+
+    .timer {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin: 10px 0 6px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 16px 14px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #eef2ff;
+      color: #1e3a8a;
+      transition: transform 0.06s ease, opacity 0.2s ease;
+    }
+
+    button:hover { opacity: 0.95; }
+    button:active { transform: scale(0.99); }
+    button.primary {
+      background: var(--accent);
+      color: white;
+    }
+    button.good {
+      background: var(--good);
+      color: white;
+    }
+    button.warn {
+      background: var(--warn);
+      color: white;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      background: #fff;
+    }
+
+    .item.active {
+      border-color: var(--accent);
+      background: #f8fbff;
+    }
+
+    .item.done {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .item.skipped {
+      border-color: #fed7aa;
+      background: #fff7ed;
+    }
+
+    .item-name {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .item-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .finish {
+      display: none;
+    }
+
+    .finish.show {
+      display: block;
+    }
+
+    .muted-box {
+      background: #f9fafb;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      line-height: 1.6;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .code-note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .step-name { font-size: 28px; }
+      .timer { font-size: 42px; }
+      .controls { grid-template-columns: 1fr; }
+      button { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">朝早流程助手 v2</div>
+    <div class="sub">
+      呢版重寫咗控制邏輯：<br>
+      1）開始 / 暫停會控制成個流程（計時、語音、音樂、時間到確認倒數）<br>
+      2）撳「完成，下一步」之後，下一步會自動開始<br>
+      3）時間到會先提醒，再畀你 10 秒選擇繼續，唔撳就自動下一步
+    </div>
+
+    <div class="card" id="mainCard">
+      <div class="step-top">
+        <div class="badge" id="stepCount">第 1 / 11 步</div>
+        <div class="status" id="runStatus">未開始</div>
+      </div>
+
+      <div class="step-name" id="stepName">刷牙</div>
+      <div class="timer" id="timerText">06:00</div>
+      <div class="small" id="stepHint">建議時間：6 分鐘。時間到會提醒你，10 秒內唔撳就自動下一步。</div>
+      <div class="small" id="nowPlaying">目前未播放音樂</div>
+
+      <div class="small" style="margin-top:10px;">
+        <div style="margin-bottom:8px;">
+          語音音量：
+          <input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="1" style="width:180px; vertical-align:middle;">
+          <span id="voiceVolumeText">100%</span>
+        </div>
+        <div>
+          音樂音量：
+          <input id="bgmVolume" type="range" min="0" max="1" step="0.05" value="1" style="width:180px; vertical-align:middle;">
+          <span id="bgmVolumeText">100%</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="startPauseBtn">開始 / 暫停</button>
+        <button class="good" id="doneBtn">完成，下一步</button>
+        <button id="prevBtn">上一個</button>
+        <button class="warn" id="skipBtn">跳過</button>
+        <button id="restartBtn" style="grid-column: 1 / -1;">重新開始</button>
+      </div>
+
+      <div class="muted-box">
+        小提示：而家呢版用<b>分類歌單</b>。將歌檔放入同一層嘅 <b>audio</b> 資料夾，再喺下面 <b>steps</b> 陣列改 <b>category</b>，以及喺 <b>musicLibrary</b> 入面填歌路徑。<br>
+        例如：<code>category: "anime"</code>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:20px;font-weight:800;margin-bottom:10px;">今日流程</div>
+      <div class="list" id="stepList"></div>
+      <div class="code-note">
+        狀態說明：綠色＝已完成，橙色＝已跳過，藍色＝目前進行中。
+      </div>
+    </div>
+
+    <div class="card finish" id="finishBox">
+      <div style="font-size:24px;font-weight:900;margin-bottom:8px;">完成啦 🎉</div>
+      <div class="small" id="finishText"></div>
+    </div>
+  </div>
+
+  <!-- 背景音樂播放器：由 JavaScript 控制播放 / 暫停 / 換歌 -->
+  <audio id="bgm"></audio>
+  <audio id="voice"></audio>
+
+  <script>
+    /* =========================
+       1. 流程資料區
+       - name: 步驟名稱
+       - duration: 建議秒數
+       - category: 音樂分類（例如 anime / game）
+       ========================= */
+       const steps = [
+  { name: "刷牙", duration: 6 * 60, voice: "voice/brush_teeth.mp3" },
+  { name: "洗面", duration: 5 * 60, voice: "voice/wash_face.mp3" },
+  { name: "拖地", duration: 4 * 60, voice: "voice/mop_floor.mp3" },
+  { name: "煮鸡蛋 + 饮水", duration: 3 * 60, voice: "voice/boil_eggs_and_drink_water.mp3" },
+  { name: "匙羹放冰箱 + 拉伸胸背", duration: 4 * 60, voice: "voice/put_spoon_in_fridge_and_stretch_chest_and_back.mp3" },
+  { name: "颈部运动 + 眼运动 + 冰敷", duration: 8 * 60, voice: "voice/neck_exercise_eye_exercise_and_cold_compress.mp3" },
+  { name: "褶被 + 攞早餐", duration: 3 * 60, voice: "voice/fold_blanket_and_get_breakfast.mp3" },
+  { name: "食早餐 + 执台", duration: 25 * 60, voice: "voice/eat_breakfast_and_clean_the_table.mp3" },
+  { name: "屙屎", duration: 10 * 60, voice: "voice/use_the_bathroom.mp3" },
+  { name: "涂防晒 + 梳头 + 影相", duration: 8 * 60, category: "game", voice: "voice/put_on_sunscreen_comb_hair_and_take_photos.mp3" },
+  { name: "洗厕所 + 换衫 + 准备出门嘅嘢", duration: 15 * 60, category: "anime", voice: "voice/clean_the_bathroom_change_clothes_and_get_ready_to_go_out.mp3" }
+];
+
+    /* =========================
+       2. 狀態變數區
+       - currentIndex: 目前第幾步
+       - timeLeft: 呢一步剩幾多秒
+       - timerId: 主倒數計時器
+       - isRunning: 主流程係咪行緊
+       - routineStartAt: 整個流程第一次開始時間
+       - stepStartedOnce: 呢一步有冇正式開始過（用嚟判斷係第一次開始定繼續）
+       - doneMap: 每一步狀態：pending / done / skipped
+       - waitingConfirm: 時間到之後嗰 10 秒確認期
+       - confirmTimerId: 10 秒確認期計時器
+       - confirmLeft: 確認期剩餘秒數
+       ========================= */
+    let currentIndex = 0;
+    let timeLeft = steps[0].duration;
+    let timerId = null;
+    let isRunning = false;
+    let routineStartAt = null;
+    let stepStartedOnce = false;
+    let doneMap = Array(steps.length).fill('pending');
+    let waitingConfirm = false;
+    let confirmTimerId = null;
+    let confirmLeft = 10;
+    let confirmGeneration = 0;
+
+    /* =========================
+       3. DOM 元素區
+       ========================= */
+    const stepCount = document.getElementById('stepCount');
+    const runStatus = document.getElementById('runStatus');
+    const stepName = document.getElementById('stepName');
+    const timerText = document.getElementById('timerText');
+    const stepHint = document.getElementById('stepHint');
+    const stepList = document.getElementById('stepList');
+    const finishBox = document.getElementById('finishBox');
+    const finishText = document.getElementById('finishText');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const voiceVolume = document.getElementById('voiceVolume');
+    const bgmVolume = document.getElementById('bgmVolume');
+    const voiceVolumeText = document.getElementById('voiceVolumeText');
+    const bgmVolumeText = document.getElementById('bgmVolumeText');
+
+    const startPauseBtn = document.getElementById('startPauseBtn');
+    const doneBtn = document.getElementById('doneBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const bgm = document.getElementById('bgm');
+    const voice = document.getElementById('voice');
+
+    const musicLibrary = {
+      anime: [
+        "audio/anime/1.mp3",
+        "audio/anime/2.mp3",
+        "audio/anime/3.mp3",
+        "audio/anime/4.mp3",
+        "audio/anime/5.mp3",
+        "audio/anime/6.mp3",
+        "audio/anime/7.mp3",
+        "audio/anime/8.mp3",
+        "audio/anime/9.mp3",
+        "audio/anime/10.mp3",
+        "audio/anime/11.mp3",
+        "audio/anime/12.mp3",
+        "audio/anime/13.mp3",
+        "audio/anime/14.mp3"
+      ],
+      game: [
+        "audio/game/1.mp3",
+        "audio/game/2.mp3",
+        "audio/game/3.mp3",
+        "audio/game/4.mp3",
+        "audio/game/5.mp3",
+        "audio/game/6.mp3",
+        "audio/game/7.mp3",
+        "audio/game/8.mp3",
+        "audio/game/9.mp3"
+      ]
+    };
+
+    // 讀取已儲存音量，冇就用預設值
+    let savedVoiceVolume = parseFloat(localStorage.getItem('morning_helper_voice_volume'));
+    let savedBgmVolume = parseFloat(localStorage.getItem('morning_helper_bgm_volume'));
+
+    if (Number.isNaN(savedVoiceVolume)) savedVoiceVolume = 1;
+    if (Number.isNaN(savedBgmVolume)) savedBgmVolume = 0.45;
+
+    voice.volume = savedVoiceVolume;
+    bgm.volume = savedBgmVolume;
+
+    voiceVolume.value = savedVoiceVolume;
+    bgmVolume.value = savedBgmVolume;
+    voiceVolumeText.textContent = `${Math.round(savedVoiceVolume * 100)}%`;
+    bgmVolumeText.textContent = `${Math.round(savedBgmVolume * 100)}%`;
+
+    // 拉桿改語音音量
+    voiceVolume.addEventListener('input', () => {
+      const v = parseFloat(voiceVolume.value);
+      voice.volume = v;
+      voiceVolumeText.textContent = `${Math.round(v * 100)}%`;
+      localStorage.setItem('morning_helper_voice_volume', v);
+    });
+
+    // 拉桿改音樂音量
+    bgmVolume.addEventListener('input', () => {
+      const v = parseFloat(bgmVolume.value);
+      bgm.volume = v;
+      bgmVolumeText.textContent = `${Math.round(v * 100)}%`;
+      localStorage.setItem('morning_helper_bgm_volume', v);
+    });
+
+    // 目前播緊邊個分類
+    let currentCategory = null;
+
+    // 目前播緊邊首歌
+    let currentTrackSrc = null;
+
+    // 上一首播過邊首（避免連續重複）
+    let lastTrackSrc = null;
+
+    // beep 用：全局重用同一個 AudioContext
+    let beepAudioContext = null;
+    let beepAudioContextUnavailable = false;
+
+    /* =========================
+       4. 小工具函式
+       ========================= */
+    function formatTime(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+      const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function formatMinutes(totalSeconds) {
+      return `${Math.round(totalSeconds / 60)} 分鐘`;
+    }
+
+    function getBeepAudioContext() {
+      if (beepAudioContextUnavailable) return null;
+
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        beepAudioContextUnavailable = true;
+        return null;
+      }
+
+      try {
+        if (!beepAudioContext) {
+          beepAudioContext = new AudioContextClass();
+        }
+        return beepAudioContext;
+      } catch (e) {
+        beepAudioContextUnavailable = true;
+        console.log('beep context init failed', e);
+        return null;
+      }
+    }
+
+    function beep() {
+      try {
+        const ctx = getBeepAudioContext();
+        if (!ctx) return;
+
+        const playTone = () => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.value = 880;
+          gain.gain.value = 0.05;
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          const startAt = ctx.currentTime;
+          const stopAt = startAt + 0.18;
+
+          osc.start(startAt);
+          osc.stop(stopAt);
+
+          osc.onended = () => {
+            try { osc.disconnect(); } catch (_) {}
+            try { gain.disconnect(); } catch (_) {}
+          };
+        };
+
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(() => {
+            try {
+              playTone();
+            } catch (e) {
+              console.log('beep play failed', e);
+            }
+          }).catch(err => {
+            console.log('beep resume failed', err);
+          });
+          return;
+        }
+
+        playTone();
+      } catch (e) {
+        console.log('beep failed', e);
+      }
+    }
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function pickRandomTrack(category) {
+      // 真隨機抽歌：每次都重新抽，但避免同上一首一樣
+      const list = musicLibrary[category] || [];
+      if (!list.length) return null;
+
+      // 如果得 1 首，就直接播
+      if (list.length === 1) return list[0];
+
+      let candidate = null;
+      let guard = 0;
+
+      do {
+        const randomIndex = Math.floor(Math.random() * list.length);
+        candidate = list[randomIndex];
+        guard++;
+      } while (candidate === lastTrackSrc && guard < 20);
+
+      return candidate;
+    }
+
+    function getTrackDisplayName(src) {
+      if (!src) return '目前未播放音樂';
+      const fileName = src.split('/').pop() || src;
+      return `目前播放：${fileName}`;
+    }
+
+    function playCurrentTrack() {
+      // 播目前抽中嗰首歌
+      if (!currentTrackSrc) return;
+
+      nowPlaying.textContent = getTrackDisplayName(currentTrackSrc);
+      bgm.pause();
+      bgm.currentTime = 0;
+      bgm.src = currentTrackSrc;
+      bgm.play().catch(err => {
+        console.log('bgm play failed', err);
+      });
+    }
+
+    function playStepAudio(step) {
+      // 進入某個步驟時，根據 category 真隨機抽一首歌
+      if (!step.category) {
+        currentCategory = null;
+        currentTrackSrc = null;
+        nowPlaying.textContent = '目前未播放音樂';
+        return;
+      }
+
+      currentCategory = step.category;
+      currentTrackSrc = pickRandomTrack(currentCategory);
+
+      if (!currentTrackSrc) return;
+
+      lastTrackSrc = currentTrackSrc;
+      playCurrentTrack();
+    }
+
+    function playVoice(src, onEnd) {
+  if (!src) {
+    if (onEnd) onEnd();
+    return;
+  }
+
+  voice.pause();
+  voice.currentTime = 0;
+  voice.src = src;
+
+  voice.onended = () => {
+    if (onEnd) onEnd();
+  };
+
+  voice.play().catch(err => {
+    console.log('voice play failed', err);
+    if (onEnd) onEnd();
+  });
+}
+
+    function pauseAudio() {
+      bgm.pause();
+    }
+
+    function resumeAudio() {
+      // 只有有歌先嘗試繼續播
+      if (!bgm.src) return;
+      bgm.play().catch(err => {
+        console.log('bgm resume failed', err);
+      });
+    }
+
+    bgm.addEventListener('ended', () => {
+      // 一首歌播完，再真隨機抽同分類另一首（避免連續重複）
+      if (!currentCategory) return;
+
+      currentTrackSrc = pickRandomTrack(currentCategory);
+      if (!currentTrackSrc) return;
+
+      lastTrackSrc = currentTrackSrc;
+      playCurrentTrack();
+    });
+
+    function clearConfirmCountdown() {
+      confirmGeneration += 1;
+
+      if (confirmTimerId) {
+        clearInterval(confirmTimerId);
+        confirmTimerId = null;
+      }
+      waitingConfirm = false;
+      confirmLeft = 10;
+      runStatus.classList.remove('waiting');
+    }
+
+    function startConfirmCountdown(targetGeneration) {
+      if (!waitingConfirm) return;
+      if (confirmTimerId) return;
+      if (targetGeneration !== confirmGeneration) return;
+
+      runStatus.classList.add('waiting');
+
+      confirmTimerId = setInterval(() => {
+        confirmLeft -= 1;
+        updateUI();
+
+        if (confirmLeft <= 0) {
+          clearConfirmCountdown();
+          moveToNextStep(true);
+        }
+      }, 1000);
+
+      updateUI();
+    }
+
+    function continueCurrentStepAfterTimeout() {
+  // 時間到後如果你撳「開始 / 暫停」，就真係繼續目前步驟，而唔係控制確認倒數
+  if (!waitingConfirm) return;
+
+  clearConfirmCountdown();
+  voice.pause();
+  voice.currentTime = 0;
+  stopSpeech();
+
+  timeLeft += 30;
+  resumeAudio();
+  startMainTimer();
+}
+    /* =========================
+       5. 畫面更新區
+       ========================= */
+    function renderList() {
+      stepList.innerHTML = '';
+      steps.forEach((step, idx) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        if (idx === currentIndex) div.classList.add('active');
+        if (doneMap[idx] === 'done') div.classList.add('done');
+        if (doneMap[idx] === 'skipped') div.classList.add('skipped');
+
+        let stateText = '未做';
+        if (doneMap[idx] === 'done') stateText = '已完成';
+        else if (doneMap[idx] === 'skipped') stateText = '已跳過';
+        else if (idx === currentIndex && waitingConfirm) stateText = `等緊確認（${confirmLeft}）`;
+        else if (idx === currentIndex && isRunning) stateText = '進行中';
+        else if (idx === currentIndex) stateText = '未開始 / 已暫停';
+
+        div.innerHTML = `
+          <div>
+            <div class="item-name">${idx + 1}. ${step.name}</div>
+            <div class="item-meta">建議時間：${formatMinutes(step.duration)}</div>
+          </div>
+          <div class="item-meta">${stateText}</div>
+        `;
+        stepList.appendChild(div);
+      });
+    }
+
+    function updateStatusText() {
+      if (waitingConfirm) {
+        runStatus.textContent = `時間到：${confirmLeft} 秒後自動下一步；撳「開始 / 暫停」可繼續呢一步（+30 秒）`;
+        runStatus.classList.add('waiting');
+        return;
+      }
+
+      runStatus.classList.remove('waiting');
+      if (isRunning) {
+        runStatus.textContent = '進行中';
+      } else if (routineStartAt) {
+        runStatus.textContent = '已暫停';
+      } else {
+        runStatus.textContent = '未開始';
+      }
+    }
+
+    function updateUI() {
+      const step = steps[currentIndex];
+      stepCount.textContent = `第 ${currentIndex + 1} / ${steps.length} 步`;
+      stepName.textContent = step.name;
+      timerText.textContent = formatTime(timeLeft);
+      stepHint.textContent = `建議時間：${formatMinutes(step.duration)}。時間到會提醒你，10 秒內唔撳就自動下一步。`;
+      prevBtn.disabled = currentIndex === 0;
+      finishBox.classList.remove('show');
+      updateStatusText();
+      renderList();
+    }
+
+    /* =========================
+       6. 主流程控制區
+       ========================= */
+       function pauseEverything() {
+  // 真正「暫停成個程式」：主 timer / 確認倒數 / 音樂 / 語音全部停
+  isRunning = false;
+
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+
+  clearConfirmCountdown();
+
+  pauseAudio();
+
+  voice.pause();
+  voice.currentTime = 0;
+
+  stopSpeech();
+  updateUI();
+}
+
+    function startMainTimer() {
+      // 真正開始呢一步嘅倒數
+      if (timerId) clearInterval(timerId);
+      isRunning = true;
+      timerId = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft -= 1;
+          timerText.textContent = formatTime(timeLeft);
+        }
+
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          timerText.textContent = formatTime(timeLeft);
+          handleStepTimeout();
+        }
+      }, 1000);
+      updateUI();
+    }
+
+    function startCurrentStepSequence() {
+  // 開始目前步驟：先播你自己錄音，再播歌，再開始倒數
+  if (!routineStartAt) routineStartAt = Date.now();
+  clearConfirmCountdown();
+  stopSpeech();
+  pauseAudio();
+
+  voice.pause();
+  voice.currentTime = 0;
+
+  stepStartedOnce = true;
+
+  const step = steps[currentIndex];
+
+  const afterVoice = () => {
+    playStepAudio(step);
+    startMainTimer();
+  };
+
+  playVoice(step.voice, afterVoice);
+}
+
+function handleStepTimeout() {
+  // 時間到：停主 timer、停歌、先播你自己錄音，再開 10 秒確認倒數
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+
+  isRunning = false;
+  pauseAudio();
+
+  voice.pause();
+  voice.currentTime = 0;
+
+  stopSpeech();
+  beep();
+  confirmGeneration += 1;
+  const thisConfirmGeneration = confirmGeneration;
+  waitingConfirm = true;
+  confirmLeft = 10;
+  updateUI();
+
+  playVoice("voice/time_up.mp3", () => {
+    startConfirmCountdown(thisConfirmGeneration);
+  });
+}
+
+    function loadStep(index) {
+      // 切去指定步驟，但唔自動開始；由外面決定要唔要即刻 startCurrentStepSequence
+      pauseEverything();
+      currentIndex = index;
+      timeLeft = steps[currentIndex].duration;
+      stepStartedOnce = false;
+      updateUI();
+      beep();
+    }
+
+    function moveToNextStep(autoStart = true, skipped = false) {
+      // 完成 / 跳過 / 自動下一步，都由呢個函式統一處理
+      if (skipped) {
+        doneMap[currentIndex] = 'skipped';
+      } else if (doneMap[currentIndex] === 'pending') {
+        doneMap[currentIndex] = 'done';
+      }
+
+      if (currentIndex < steps.length - 1) {
+        loadStep(currentIndex + 1);
+        if (autoStart) {
+          startCurrentStepSequence();
+        }
+      } else {
+        finishRoutine();
+      }
+    }
+
+    function finishRoutine() {
+      // 全部完成：停晒所有嘢，顯示總結
+      pauseEverything();
+      doneMap[currentIndex] = doneMap[currentIndex] === 'skipped' ? 'skipped' : 'done';
+      renderList();
+      const totalMinutes = routineStartAt
+        ? Math.round((Date.now() - routineStartAt) / 60000)
+        : 0;
+      finishText.textContent = `你今日完成咗 ${steps.length} 步。由第一次開始計，大約用咗 ${totalMinutes} 分鐘。`;
+      finishBox.classList.add('show');
+      runStatus.textContent = '已完成';
+      runStatus.classList.remove('waiting');
+      beep();
+      playVoice("voice/all_done.mp3");
+    }
+
+    /* =========================
+       7. 按鈕事件區
+       ========================= */
+       startPauseBtn.addEventListener('click', () => {
+  // 情況 A：如果而家正處於「時間到後 10 秒確認期」
+  if (waitingConfirm) {
+    continueCurrentStepAfterTimeout();
+    return;
+  }
+
+  // 情況 B：如果目前步驟正在進行中 -> 暫停成個流程
+  if (isRunning) {
+    pauseEverything();
+    return;
+  }
+
+  // 情況 C：如果目前步驟未正式開始過 -> 先播你自己錄音，再播歌，再倒數
+  if (!stepStartedOnce && timeLeft === steps[currentIndex].duration) {
+    startCurrentStepSequence();
+    return;
+  }
+
+  // 情況 D：如果只是一般暫停後再繼續
+  // 如果背景音樂未開始，代表之前可能停喺 voice 階段，咁就重新開目前步驟
+  if (!bgm.src) {
+    startCurrentStepSequence();
+    return;
+  }
+
+  // 否則就正常繼續背景音樂 + 倒數
+  resumeAudio();
+  startMainTimer();
+});
+
+    doneBtn.addEventListener('click', () => {
+      // 撳「完成，下一步」：目前步驟視為完成，下一步自動開始
+      moveToNextStep(true, false);
+    });
+
+    skipBtn.addEventListener('click', () => {
+      // 撳「跳過」：目前步驟標記為已跳過，下一步自動開始
+      moveToNextStep(true, true);
+    });
+
+    prevBtn.addEventListener('click', () => {
+      // 上一步：只切換畫面，不自動開始，避免你亂咗節奏
+      if (currentIndex > 0) {
+        loadStep(currentIndex - 1);
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      // 重新開始：整個流程回到第一步
+      pauseEverything();
+      currentIndex = 0;
+      timeLeft = steps[0].duration;
+      routineStartAt = null;
+      stepStartedOnce = false;
+      doneMap = Array(steps.length).fill('pending');
+      finishBox.classList.remove('show');
+      updateUI();
+    });
+
+    /* =========================
+       8. 初始化
+       ========================= */
+    updateUI();
+  </script>
+</body>
+</html>
