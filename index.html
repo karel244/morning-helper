@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>朝早流程助手 v4.2</title>
+<style>
+    :root {
+      --bg: #edf1f7;
+      --card: #f8fafc;
+      --text: #223047;
+      --muted: #637089;
+      --line: #d8dfeb;
+      --accent: #6177aa;
+      --accent-soft: #dde5f7;
+      --good: #5e8f78;
+      --warn: #b98563;
+      --danger: #b66e77;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 26px 18px 58px;
+    }
+
+    .title {
+      font-size: 31px;
+      font-weight: 800;
+      margin: 8px 0 0;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      letter-spacing: 0.02em;
+      margin: 4px 0 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 14px 34px rgba(63, 77, 102, 0.10);
+      margin-bottom: 16px;
+    }
+
+    .step-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .status.waiting {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .step-name {
+      font-size: 35px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin: 10px 0 8px;
+    }
+
+    .timer {
+      font-size: 50px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin: 10px 0 6px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .progress-wrap {
+      width: 100%;
+      height: 9px;
+      background: #d7deef;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 14px;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      height: 52px;
+      min-height: 52px;
+      padding: 0 14px;
+      font-size: 18px !important;
+      line-height: 1 !important;
+      font-weight: 800 !important;
+      font-family: inherit;
+      cursor: pointer;
+      background: #dfe6f4;
+      color: #425a8a;
+      transition: opacity 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    button:hover { opacity: 0.96; box-shadow: 0 10px 22px rgba(66, 90, 138, 0.14); }
+    button:active { transform: none; }
+    button.primary {
+      background: var(--accent);
+      color: white;
+    }
+    button.good {
+      background: var(--good);
+      color: white;
+    }
+    button.warn {
+      background: var(--warn);
+      color: white;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      height: 52px;
+      min-height: 52px;
+      padding: 0 14px;
+      font-size: 18px !important;
+      line-height: 1 !important;
+      font-weight: 800 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flow-mode-switch {
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 6px;
+      margin-bottom: 10px;
+      box-shadow: 0 8px 18px rgba(66, 90, 138, 0.06);
+    }
+
+    .mode-chip {
+      min-width: 92px;
+      height: 42px;
+      min-height: 42px;
+      border-radius: 12px;
+      font-size: 15px !important;
+      background: transparent;
+      color: var(--muted);
+      box-shadow: none;
+    }
+
+    .mode-chip.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(97, 119, 170, 0.18);
+    }
+
+    .mode-chip:disabled {
+      opacity: 0.55;
+    }
+
+    .mode-switch-notice {
+      min-height: 20px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--warn);
+    }
+
+    .list {
+      display: grid;
+      gap: 11px;
+    }
+
+    .list-jump-notice {
+      min-height: 20px;
+      margin: -2px 0 10px;
+      font-size: 13px;
+      color: var(--warn);
+      line-height: 1.4;
+    }
+
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      background: #fff;
+    }
+
+    .item.active {
+      border-color: var(--accent);
+      background: #eef3fb;
+    }
+
+    .item.done {
+      border-color: #bbf7d0;
+      background: #edf7f1;
+    }
+
+    .item.skipped {
+      border-color: #fed7aa;
+      background: #fbf3ec;
+    }
+
+    .item.pending-target {
+      border-color: var(--warn);
+      background: #fff7ef;
+      box-shadow: inset 0 0 0 1px rgba(185, 133, 99, 0.18);
+    }
+
+    .item.selectable {
+      cursor: pointer;
+    }
+
+    .item.selectable:hover {
+      box-shadow: 0 10px 20px rgba(66, 90, 138, 0.08);
+    }
+
+    .item-name {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .item-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .finish {
+      display: none;
+    }
+
+    .finish.show {
+      display: block;
+    }
+
+    .muted-box {
+      background: #f1f4f8;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      line-height: 1.6;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .code-note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+
+    .mode-toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f1f4f8;
+    }
+
+    .mode-toggle-label {
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .mode-toggle-help {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .mode-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .mode-switch input {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .mode-notice {
+      color: var(--warn);
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+
+    .main-action-zone {
+      display: grid;
+      gap: 0;
+    }
+
+    .secondary-settings-zone {
+      margin-top: 24px;
+      padding: 16px;
+      border: 1px solid #e0e6f0;
+      border-radius: 16px;
+      background: #f3f6fb;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+    }
+
+    .secondary-zone-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      margin-bottom: 2px;
+    }
+
+    .secondary-zone-note {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .aux-now-playing {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.55);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .audio-settings {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .audio-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr) 46px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .audio-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .audio-percent {
+      text-align: right;
+      font-size: 13px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .audio-settings input[type="range"] {
+      width: 100%;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .secondary-settings-zone .mode-toggle-row {
+      margin-top: 0;
+      background: rgba(255,255,255,0.45);
+    }
+
+    .secondary-settings-zone .mode-notice {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .secondary-settings-zone .muted-box {
+      margin-top: 12px;
+      background: rgba(255,255,255,0.45);
+    }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+    }
+
+    
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+
+    .track-control-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 96px;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+
+    .track-control-row .aux-now-playing {
+      margin-bottom: 0;
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+    }
+
+    .secondary-action {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      min-height: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.72);
+      color: var(--text);
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      box-shadow: none;
+    }
+
+    .secondary-action:hover {
+      box-shadow: 0 8px 16px rgba(66, 90, 138, 0.08);
+    }
+
+
+    body[data-flow-mode="night"] {
+      --bg: #141b28;
+      --card: #1d2738;
+      --text: #eef3ff;
+      --muted: #a9b8d7;
+      --line: #35425e;
+      --accent: #93aee7;
+      --accent-soft: #2a3650;
+      --good: #85b39c;
+      --warn: #c8a07c;
+      --danger: #d9939d;
+    }
+
+    body[data-flow-mode="night"] {
+      background: linear-gradient(180deg, #111724 0%, #172031 100%);
+    }
+
+    body[data-flow-mode="night"] .card {
+      box-shadow: 0 18px 38px rgba(4, 10, 22, 0.34);
+    }
+
+    body[data-flow-mode="night"] button {
+      background: #2b3750;
+      color: #dce6ff;
+    }
+
+    body[data-flow-mode="night"] button.primary,
+    body[data-flow-mode="night"] button.good {
+      color: #111827;
+    }
+
+    body[data-flow-mode="night"] button.warn {
+      color: #1f160f;
+    }
+
+    body[data-flow-mode="night"] .flow-mode-switch {
+      background: rgba(18, 24, 38, 0.78);
+      border-color: var(--line);
+      box-shadow: 0 10px 24px rgba(6, 10, 22, 0.22);
+    }
+
+    body[data-flow-mode="night"] .mode-chip {
+      color: var(--muted);
+    }
+
+    body[data-flow-mode="night"] .mode-chip.active {
+      background: var(--accent);
+      color: #0f1827;
+      box-shadow: 0 10px 20px rgba(147, 174, 231, 0.20);
+    }
+
+    body[data-flow-mode="night"] .progress-wrap {
+      background: #2c3852;
+    }
+
+    body[data-flow-mode="night"] .secondary-settings-zone {
+      background: #182233;
+      border-color: var(--line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    body[data-flow-mode="night"] .mode-toggle-row,
+    body[data-flow-mode="night"] .secondary-settings-zone .mode-toggle-row,
+    body[data-flow-mode="night"] .aux-now-playing,
+    body[data-flow-mode="night"] .secondary-action,
+    body[data-flow-mode="night"] .secondary-settings-zone .muted-box,
+    body[data-flow-mode="night"] .muted-box {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--line);
+      color: var(--text);
+    }
+
+    body[data-flow-mode="night"] .item {
+      background: #172131;
+      border-color: var(--line);
+    }
+
+    body[data-flow-mode="night"] .item.active {
+      background: #20304a;
+      border-color: var(--accent);
+    }
+
+    body[data-flow-mode="night"] .item.done {
+      background: #1d3028;
+      border-color: #4d8b72;
+    }
+
+    body[data-flow-mode="night"] .item.skipped {
+      background: #352a21;
+      border-color: #ac7c56;
+    }
+
+    body[data-flow-mode="night"] .item.pending-target {
+      background: #3a2d22;
+      border-color: var(--warn);
+      box-shadow: inset 0 0 0 1px rgba(200, 160, 124, 0.20);
+    }
+
+    body[data-flow-mode="night"] .item.selectable:hover,
+    body[data-flow-mode="night"] .secondary-action:hover,
+    body[data-flow-mode="night"] button:hover {
+      box-shadow: 0 10px 22px rgba(4, 10, 22, 0.22);
+    }
+
+    body[data-flow-mode="night"] .mode-switch-notice,
+    body[data-flow-mode="night"] .list-jump-notice,
+    body[data-flow-mode="night"] .mode-notice {
+      color: #e2b28e;
+    }
+
+    body[data-flow-mode="night"] .finish.show {
+      background: linear-gradient(180deg, rgba(147, 174, 231, 0.08) 0%, rgba(29, 39, 56, 1) 100%);
+    }
+
+    /* v4.2：只做晚黑模式可读性 / 字色层级微调，不改逻辑 */
+    body[data-flow-mode="night"] .title {
+      color: #f7fbff;
+    }
+
+    body[data-flow-mode="night"] .sub {
+      color: #9cadcf;
+    }
+
+    body[data-flow-mode="night"] .badge {
+      background: #314566;
+      color: #d9e6ff;
+    }
+
+    body[data-flow-mode="night"] .status {
+      color: #c4d2ee;
+    }
+
+    body[data-flow-mode="night"] .status.waiting {
+      color: #ffd0a8;
+    }
+
+    body[data-flow-mode="night"] .step-name {
+      color: #f6f9ff;
+    }
+
+    body[data-flow-mode="night"] .timer {
+      color: #edf3ff;
+      text-shadow: 0 2px 10px rgba(8, 15, 30, 0.18);
+    }
+
+    body[data-flow-mode="night"] .small {
+      color: #afbedb;
+    }
+
+    body[data-flow-mode="night"] .secondary-zone-title,
+    body[data-flow-mode="night"] .mode-toggle-label,
+    body[data-flow-mode="night"] .audio-label {
+      color: #eef4ff;
+    }
+
+    body[data-flow-mode="night"] .secondary-zone-note,
+    body[data-flow-mode="night"] .audio-percent,
+    body[data-flow-mode="night"] .mode-toggle-help {
+      color: #9fb1d6;
+    }
+
+    body[data-flow-mode="night"] .flow-mode-switch {
+      background: rgba(16, 23, 36, 0.88);
+      border-color: #3d4f72;
+      box-shadow: 0 12px 28px rgba(6, 10, 22, 0.26);
+    }
+
+    body[data-flow-mode="night"] .mode-chip {
+      color: #c8d6f2;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    body[data-flow-mode="night"] .mode-chip.active {
+      background: #a8bff0;
+      color: #0f1a2b;
+      box-shadow: 0 10px 22px rgba(168, 191, 240, 0.22);
+    }
+
+    body[data-flow-mode="night"] button {
+      background: #32435f;
+      color: #edf3ff;
+      box-shadow: inset 0 0 0 1px rgba(124, 148, 196, 0.18);
+    }
+
+    body[data-flow-mode="night"] button.primary {
+      background: #a8bff0;
+      color: #101a2b;
+      box-shadow: 0 10px 24px rgba(168, 191, 240, 0.20);
+    }
+
+    body[data-flow-mode="night"] button.good {
+      background: #96cbad;
+      color: #132218;
+      box-shadow: 0 10px 22px rgba(150, 203, 173, 0.18);
+    }
+
+    body[data-flow-mode="night"] button.warn {
+      background: #d4a173;
+      color: #23170f;
+      box-shadow: 0 10px 22px rgba(212, 161, 115, 0.18);
+    }
+
+    body[data-flow-mode="night"] button:disabled {
+      opacity: 1;
+      background: #243248;
+      color: #7f93bb;
+      box-shadow: inset 0 0 0 1px rgba(92, 112, 152, 0.16);
+    }
+
+    body[data-flow-mode="night"] .secondary-action {
+      background: #243650;
+      color: #ebf2ff;
+      border-color: #476089;
+      box-shadow: inset 0 0 0 1px rgba(101, 128, 175, 0.16);
+    }
+
+    body[data-flow-mode="night"] .secondary-action:disabled {
+      background: #1d2a3d;
+      color: #7284a9;
+      border-color: #31425f;
+    }
+
+    body[data-flow-mode="night"] .aux-now-playing,
+    body[data-flow-mode="night"] .mode-toggle-row,
+    body[data-flow-mode="night"] .secondary-settings-zone .muted-box,
+    body[data-flow-mode="night"] .muted-box {
+      background: rgba(255, 255, 255, 0.05);
+      color: #edf3ff;
+      border-color: #3a4b6a;
+    }
+
+    body[data-flow-mode="night"] .item {
+      background: #182233;
+      border-color: #385077;
+    }
+
+    body[data-flow-mode="night"] .item-name {
+      color: #f3f7ff;
+    }
+
+    body[data-flow-mode="night"] .item > .item-meta {
+      color: #d3e0fb;
+      font-weight: 700;
+    }
+
+    body[data-flow-mode="night"] .item > div .item-meta {
+      color: #9eb1d6;
+      font-weight: 500;
+    }
+
+    body[data-flow-mode="night"] .item.active {
+      background: #243652;
+      border-color: #9fbcf3;
+    }
+
+    body[data-flow-mode="night"] .item.active .item-name,
+    body[data-flow-mode="night"] .item.active > .item-meta {
+      color: #ffffff;
+    }
+
+    body[data-flow-mode="night"] .item.done {
+      background: #203329;
+      border-color: #6eaa8f;
+    }
+
+    body[data-flow-mode="night"] .item.done > .item-meta {
+      color: #c2edd5;
+    }
+
+    body[data-flow-mode="night"] .item.skipped {
+      background: #392b21;
+      border-color: #c08b5f;
+    }
+
+    body[data-flow-mode="night"] .item.skipped > .item-meta {
+      color: #ffd2ab;
+    }
+
+    body[data-flow-mode="night"] .item.pending-target {
+      background: #403022;
+      border-color: #d2a173;
+      box-shadow: inset 0 0 0 1px rgba(210, 161, 115, 0.22);
+    }
+
+    body[data-flow-mode="night"] .item.pending-target > .item-meta {
+      color: #ffd9b8;
+    }
+
+
+    @media (max-width: 640px) {
+      .track-control-row {
+        grid-template-columns: 1fr;
+      }
+      .secondary-action {
+        width: 100%;
+      }
+      .step-name { font-size: 28px; }
+      .timer { font-size: 42px; }
+      .controls { grid-template-columns: 1fr; }
+
+      .secondary-settings-zone {
+        margin-top: 20px;
+        padding: 14px;
+      }
+      .audio-row {
+        grid-template-columns: 1fr auto;
+      }
+      .audio-row input[type="range"] {
+        grid-column: 1 / -1;
+      }
+      button { font-size: 18px !important; height: 52px; min-height: 52px; }
+    }
+  </style>
+</head>
+<body data-flow-mode="morning">
+<div class="wrap">
+<div class="flow-mode-switch" id="flowModeSwitch">
+<button class="mode-chip active" id="morningModeBtn" type="button">朝早</button>
+<button class="mode-chip" id="nightModeBtn" type="button">晚黑</button>
+</div>
+<div class="mode-switch-notice" id="flowModeNotice"></div>
+<div class="title" id="appTitle">朝早流程助手</div>
+<div class="sub version-line" id="appSub">v4.2｜朝早模式</div>
+<div class="card" id="mainCard"><div class="main-action-zone"><div class="step-top">
+<div class="badge" id="stepCount">第 1 / 11 步</div>
+<div class="status" id="runStatus">未開始</div>
+</div><div class="step-name" id="stepName">刷牙</div><div class="timer" id="timerText">06:00</div><div aria-label="目前步驟進度" class="progress-wrap">
+<div class="progress-bar" id="stepProgressBar"></div>
+</div><div aria-hidden="true" class="small visually-hidden" id="stepHint">建議時間：6 分鐘。時間到會提醒你，10 秒內唔撳就自動下一步。</div><div class="controls">
+<button class="primary" id="startPauseBtn">開始 / 暫停</button>
+<button class="good" id="doneBtn">完成，下一步</button>
+<button id="prevBtn">上一個</button>
+<button class="warn" id="skipBtn">跳過</button>
+<button id="restartBtn" style="grid-column: 1 / -1;">重新開始</button>
+</div></div><div class="secondary-settings-zone"><div class="track-control-row"><div class="small aux-now-playing" id="nowPlaying">目前未播放音樂</div><button class="secondary-action" id="nextTrackBtn" type="button">切歌</button></div><div class="mode-toggle-row">
+<div>
+<div class="mode-toggle-label">測試模式</div>
+<div aria-hidden="true" class="mode-toggle-help visually-hidden" id="modeHelp">關閉：使用正常時間</div>
+</div>
+<label class="mode-switch">
+<input id="devModeToggle" type="checkbox"/>
+<span id="devModeText">關閉</span>
+</label>
+</div><div class="small mode-notice" id="modeNotice"></div><div class="audio-settings"><div class="audio-row"><span class="audio-label">語音音量</span><input aria-label="語音音量" id="voiceVolume" max="1" min="0" step="0.05" type="range" value="1"/><span class="audio-percent" id="voiceVolumeText">100%</span></div><div class="audio-row"><span class="audio-label">音樂音量</span><input aria-label="音樂音量" id="bgmVolume" max="1" min="0" step="0.05" type="range" value="1"/><span class="audio-percent" id="bgmVolumeText">100%</span></div></div></div></div>
+<div class="card">
+<div style="font-size:20px;font-weight:800;margin-bottom:10px;">今日流程</div>
+<div class="list-jump-notice" id="stepPickNotice"></div>
+<div class="list" id="stepList"></div>
+</div>
+<div class="card finish" id="finishBox">
+<div style="font-size:24px;font-weight:900;margin-bottom:8px;">完成啦 🎉</div>
+<div class="small" id="finishText"></div>
+</div>
+</div>
+<!-- 背景音樂播放器：由 JavaScript 控制播放 / 暫停 / 換歌 -->
+<audio id="bgm" preload="auto"></audio>
+<audio id="voice" preload="auto"></audio>
+<script>
+    // =========================
+    // 1. 配置區
+    // =========================
+    const APP_NAME = "朝早流程助手";
+    const APP_VERSION = "v4.2";
+
+    const DEFAULT_DEV_MODE = false;
+    const DEV_STEP_SECONDS = 3;
+    const DEV_CONFIRM_SECONDS = 3;
+    const DEV_MODE_STORAGE_KEY = 'morning_helper_dev_mode';
+    let DEV_MODE = readDevModePreference();
+
+    const UI_TEXT = Object.freeze({
+      idle: "未開始",
+      running: "進行中",
+      paused: "已暫停",
+      finished: "已完成",
+      musicFailed: "音樂播放失敗：請檢查 audio 文件",
+      noMusic: "目前未播放音樂",
+      loading: "請稍等"
+    });
+
+    // =========================
+    // 2. 數據區
+    // =========================
+    const MORNING_STEPS = [
+      {
+        id: "brush_teeth",
+        name: "刷牙",
+        duration: 6 * 60,
+        voice: "voice/brush_teeth.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "wash_face",
+        name: "洗面",
+        duration: 5 * 60,
+        voice: "voice/wash_face.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "boil_water_and_mop_floor",
+        name: "煲水 + 拖地",
+        duration: 4 * 60,
+        voice: "voice/boil_water_and_mop_floor.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "drink_water_and_boil_eggs",
+        name: "饮水 + 煮鸡蛋",
+        duration: 3 * 60,
+        voice: "voice/drink_water_and_boil_eggs.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "put_spoon_in_fridge_and_stretch_chest_and_back",
+        name: "匙羹放冰箱 + 拉伸胸背",
+        duration: 4 * 60,
+        voice: "voice/put_spoon_in_fridge_and_stretch_chest_and_back.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "neck_exercise_eye_exercise_cold_compress_and_put_on_eye_cream",
+        name: "颈部运动 + 眼运动 + 冰敷 + 搽眼霜",
+        duration: 8 * 60,
+        voice: "voice/neck_exercise_eye_exercise_cold_compress_and_put_on_eye_cream.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "fold_blanket_get_breakfast_and_prepare_lunch",
+        name: "褶被 + 攞早餐 + 煮晏",
+        duration: 8 * 60,
+        voice: "voice/fold_blanket_get_breakfast_and_prepare_lunch.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "eat_breakfast_and_clean_the_table",
+        name: "食早餐 + 执台",
+        duration: 25 * 60,
+        voice: "voice/eat_breakfast_and_clean_the_table.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "use_the_bathroom",
+        name: "屙屎",
+        duration: 10 * 60,
+        voice: "voice/use_the_bathroom.mp3",
+        music: { enabled: false, category: null }
+      },
+      {
+        id: "take_photos_put_on_sunscreen_and_comb_hair",
+        name: "影相 + 涂防晒 + 梳头",
+        duration: 8 * 60,
+        voice: "voice/take_photos_put_on_sunscreen_and_comb_hair.mp3",
+        music: { enabled: true, category: "game" }
+      },
+      {
+        id: "clean_the_bathroom_change_clothes_and_get_ready_to_go_out",
+        name: "洗厕所 + 换衫 + 攞出门嘅嘢",
+        duration: 10 * 60,
+        voice: "voice/clean_the_bathroom_change_clothes_and_get_ready_to_go_out.mp3",
+        music: { enabled: true, category: "anime" }
+      },
+      {
+        id: "trash_bag_changing_and_finger_exercise",
+        name: "换垃圾袋 + 手指锻炼",
+        duration: 10 * 60,
+        voice: "voice/trash_bag_changing_and_finger_exercise.mp3",
+        music: { enabled: true, category: "anime2" }
+      }
+    ];
+
+    const NIGHT_STEPS = [
+  {
+    id: "turn_off_lights_and_computer",
+    name: "换灯 + 关电脑",
+    duration: 5 * 60,
+    voice: "voice/turn_off_lights_and_computer.mp3",
+    music: { enabled: false, category: null }
+  },
+  {
+    id: "neck_exercise__eye_exercise",
+    name: "颈运动 + 眼运动",
+    duration: 10 * 60,
+    voice: "voice/neck_exercise_and_eye_exercise.mp3",
+    music: { enabled: false, category: null }
+  },
+  {
+    id: "put_on_eye_cream_hot_compress",
+    name: "搽眼霜 + 热敷",
+    duration: 20 * 60,
+    voice: "voice/put_on_eye_cream_hot_compress.mp3",
+    music: { enabled: false, category: null }
+  }
+];
+
+    const FLOW_MODES = Object.freeze({
+      morning: { id: 'morning', label: '朝早', title: '朝早流程助手', steps: MORNING_STEPS },
+      night: { id: 'night', label: '晚黑', title: '晚黑流程助手', steps: NIGHT_STEPS }
+    });
+
+    let currentModeId = 'morning';
+    let steps = FLOW_MODES[currentModeId].steps;
+
+    const musicLibrary = {
+      anime: [
+        "audio/anime/1.mp3",
+        "audio/anime/2.mp3",
+        "audio/anime/3.mp3",
+        "audio/anime/4.mp3",
+        "audio/anime/5.mp3",
+        "audio/anime/6.mp3",
+        "audio/anime/7.mp3",
+        "audio/anime/8.mp3",
+        "audio/anime/9.mp3",
+        "audio/anime/10.mp3",
+        "audio/anime/11.mp3",
+        "audio/anime/12.mp3",
+        "audio/anime/13.mp3",
+        "audio/anime/14.mp3",
+        "audio/anime/15.mp3",
+        "audio/anime/16.mp3",
+        "audio/anime/17.mp3",
+        "audio/anime/18.mp3",
+        "audio/anime/19.mp3",
+        "audio/anime/20.mp3",
+        "audio/anime/21.mp3",
+        "audio/anime/22.mp3",
+        "audio/anime/23.mp3",
+        "audio/anime/24.mp3",
+        "audio/anime/25.mp3",
+        "audio/anime/26.mp3",
+        "audio/anime/27.mp3",
+        "audio/anime/28.mp3"
+      ],
+      anime2: [
+        "audio/anime2/1.mp3",
+        "audio/anime2/2.mp3",
+        "audio/anime2/3.mp3",
+        "audio/anime2/4.mp3",
+        "audio/anime2/5.mp3",
+        "audio/anime2/6.mp3",
+        "audio/anime2/7.mp3",
+        "audio/anime2/8.mp3"
+      ],
+      game: [
+        "audio/game/1.mp3",
+        "audio/game/2.mp3",
+        "audio/game/3.mp3",
+        "audio/game/4.mp3",
+        "audio/game/5.mp3",
+        "audio/game/6.mp3",
+        "audio/game/7.mp3",
+        "audio/game/8.mp3",
+        "audio/game/9.mp3"
+      ]
+    };
+
+    const APP_STATES = Object.freeze({
+      IDLE: 'idle',
+      STEP_VOICE: 'step_voice',
+      RUNNING: 'running',
+      PAUSED: 'paused',
+      TIMEOUT_PROMPT: 'timeout_prompt',
+      WAITING_CONFIRM: 'waiting_confirm',
+      FINISHED: 'finished'
+    });
+
+
+function getInitialModeStepDuration(stepList, index = 0) {
+  const step = stepList[index];
+  if (!step) return 0;
+  return DEV_MODE ? DEV_STEP_SECONDS : step.duration;
+}
+
+function createFlowState(stepList) {
+  return {
+    appState: APP_STATES.IDLE,
+    currentIndex: 0,
+    timeLeft: getInitialModeStepDuration(stepList, 0),
+    doneMap: Array(stepList.length).fill('pending'),
+    routineStartAt: null,
+    currentCategory: null,
+    currentTrackSrc: null,
+    lastTrackSrc: null,
+    failedTracks: new Set(),
+    musicRetryCount: 0,
+    currentTrackAttemptToken: 0,
+    confirmLeft: getConfirmSeconds(),
+    preparedMusicByStep: new Map(),
+    playedTracksByCategory: new Map(),
+    pendingJumpTargetIndex: null,
+    stepPickNoticeText: '',
+    finishSummary: ''
+  };
+}
+
+const flowStates = {
+  morning: createFlowState(FLOW_MODES.morning.steps),
+  night: createFlowState(FLOW_MODES.night.steps)
+};
+
+let appState = APP_STATES.IDLE;
+let currentIndex = 0;
+let timeLeft = getStepDuration(0);
+let timerId = null;
+let confirmTimerId = null;
+let confirmLeft = getConfirmSeconds();
+let confirmGeneration = 0;
+let routineStartAt = null;
+let doneMap = Array(steps.length).fill('pending');
+let currentCategory = null;
+let currentTrackSrc = null;
+let lastTrackSrc = null;
+let failedTracks = new Set();
+let musicRetryCount = 0;
+let currentTrackAttemptToken = 0;
+const MAX_MUSIC_RETRY_COUNT = 3;
+let voicePhaseGeneration = 0;
+let pendingJumpTargetIndex = null;
+
+function saveCurrentModeState() {
+  flowStates[currentModeId] = {
+    appState,
+    currentIndex,
+    timeLeft,
+    doneMap: doneMap.slice(),
+    routineStartAt,
+    currentCategory,
+    currentTrackSrc,
+    lastTrackSrc,
+    failedTracks: new Set(failedTracks),
+    musicRetryCount,
+    currentTrackAttemptToken,
+    confirmLeft,
+    preparedMusicByStep: new Map(preparedMusicByStep),
+    playedTracksByCategory: new Map(Array.from(playedTracksByCategory.entries(), ([category, set]) => [category, new Set(set)])),
+    pendingJumpTargetIndex,
+    stepPickNoticeText: stepPickNotice ? stepPickNotice.textContent : '',
+    finishSummary: finishText ? finishText.textContent : ''
+  };
+}
+
+function loadModeState(modeId) {
+  const state = flowStates[modeId];
+  currentModeId = modeId;
+  steps = FLOW_MODES[modeId].steps;
+  appState = state.appState;
+  currentIndex = state.currentIndex;
+  timeLeft = state.timeLeft;
+  doneMap = state.doneMap.slice();
+  routineStartAt = state.routineStartAt;
+  currentCategory = state.currentCategory;
+  currentTrackSrc = state.currentTrackSrc;
+  lastTrackSrc = state.lastTrackSrc;
+  failedTracks = new Set(state.failedTracks);
+  musicRetryCount = state.musicRetryCount;
+  currentTrackAttemptToken = state.currentTrackAttemptToken;
+  confirmLeft = state.confirmLeft;
+  preparedMusicByStep = new Map(state.preparedMusicByStep);
+  playedTracksByCategory = new Map(Array.from(state.playedTracksByCategory.entries(), ([category, set]) => [category, new Set(set)]));
+  pendingJumpTargetIndex = state.pendingJumpTargetIndex;
+  if (stepPickNotice) stepPickNotice.textContent = state.stepPickNoticeText || '';
+  if (finishText) finishText.textContent = state.finishSummary || '';
+  if (finishBox) {
+    if (appState === APP_STATES.FINISHED && state.finishSummary) finishBox.classList.add('show');
+    else finishBox.classList.remove('show');
+  }
+  nowPlaying.textContent = currentTrackSrc ? getTrackDisplayName(currentTrackSrc) : UI_TEXT.noMusic;
+}
+
+const STORAGE_KEYS = Object.freeze({
+      voiceVolume: 'morning_helper_voice_volume',
+      bgmVolume: 'morning_helper_bgm_volume'
+    });
+
+    // =========================
+    // 3. DOM 元素區
+    // =========================
+    const appTitle = document.getElementById('appTitle');
+    const appSub = document.getElementById('appSub');
+    const morningModeBtn = document.getElementById('morningModeBtn');
+    const nightModeBtn = document.getElementById('nightModeBtn');
+    const flowModeNotice = document.getElementById('flowModeNotice');
+    const stepCount = document.getElementById('stepCount');
+    const runStatus = document.getElementById('runStatus');
+    const stepName = document.getElementById('stepName');
+    const timerText = document.getElementById('timerText');
+    const stepProgressBar = document.getElementById('stepProgressBar');
+    const stepHint = document.getElementById('stepHint');
+    const stepList = document.getElementById('stepList');
+    const finishBox = document.getElementById('finishBox');
+    const finishText = document.getElementById('finishText');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const devModeToggle = document.getElementById('devModeToggle');
+    const devModeText = document.getElementById('devModeText');
+    const modeHelp = document.getElementById('modeHelp');
+    const modeNotice = document.getElementById('modeNotice');
+    const voiceVolume = document.getElementById('voiceVolume');
+    const bgmVolume = document.getElementById('bgmVolume');
+    const voiceVolumeText = document.getElementById('voiceVolumeText');
+    const bgmVolumeText = document.getElementById('bgmVolumeText');
+    const nextTrackBtn = document.getElementById('nextTrackBtn');
+    const stepPickNotice = document.getElementById('stepPickNotice');
+    
+    const startPauseBtn = document.getElementById('startPauseBtn');
+    const doneBtn = document.getElementById('doneBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const bgm = document.getElementById('bgm');
+    const voice = document.getElementById('voice');
+
+    // beep 用：全局重用同一個 AudioContext
+    let beepAudioContext = null;
+    let beepAudioContextUnavailable = false;
+    let audioWarmupStarted = false;
+    const preloadedAudioMap = new Map();
+    let preparedMusicByStep = new Map();
+    let playedTracksByCategory = new Map();
+
+    // =========================
+    // 4. 工具函式區
+    // =========================
+
+    function clampVolume(value, fallback) {
+      const number = Number.parseFloat(value);
+      if (!Number.isFinite(number)) return fallback;
+      return Math.min(1, Math.max(0, number));
+    }
+
+    function initVolumeControls() {
+      const savedVoiceVolume = clampVolume(localStorage.getItem(STORAGE_KEYS.voiceVolume), 1);
+      const savedBgmVolume = clampVolume(localStorage.getItem(STORAGE_KEYS.bgmVolume), 0.45);
+
+      voice.volume = savedVoiceVolume;
+      bgm.volume = savedBgmVolume;
+
+      voiceVolume.value = savedVoiceVolume;
+      bgmVolume.value = savedBgmVolume;
+      voiceVolumeText.textContent = `${Math.round(savedVoiceVolume * 100)}%`;
+      bgmVolumeText.textContent = `${Math.round(savedBgmVolume * 100)}%`;
+
+      voiceVolume.addEventListener('input', () => {
+        const v = parseFloat(voiceVolume.value);
+        voice.volume = v;
+        voiceVolumeText.textContent = `${Math.round(v * 100)}%`;
+        localStorage.setItem(STORAGE_KEYS.voiceVolume, v);
+      });
+
+      bgmVolume.addEventListener('input', () => {
+        const v = parseFloat(bgmVolume.value);
+        bgm.volume = v;
+        bgmVolumeText.textContent = `${Math.round(v * 100)}%`;
+        localStorage.setItem(STORAGE_KEYS.bgmVolume, v);
+      });
+    }
+
+    function readDevModePreference() {
+      try {
+        const saved = localStorage.getItem(DEV_MODE_STORAGE_KEY);
+        if (saved === 'true') return true;
+        if (saved === 'false') return false;
+      } catch (err) {
+        console.log('dev mode preference read failed', err);
+      }
+      return DEFAULT_DEV_MODE;
+    }
+
+    function saveDevModePreference(value) {
+      try {
+        localStorage.setItem(DEV_MODE_STORAGE_KEY, value ? 'true' : 'false');
+      } catch (err) {
+        console.log('dev mode preference save failed', err);
+      }
+    }
+
+    function isModeSwitchAllowedNow() {
+      return appState === APP_STATES.IDLE;
+    }
+
+    function syncDevModeSwitchUI() {
+      devModeToggle.checked = DEV_MODE;
+      devModeText.textContent = DEV_MODE ? '開啟' : '關閉';
+      modeHelp.textContent = DEV_MODE
+        ? `開啟：每步 ${DEV_STEP_SECONDS} 秒，確認 ${DEV_CONFIRM_SECONDS} 秒`
+        : '關閉：使用正常時間';
+    }
+
+    function showModeNotice(message) {
+      modeNotice.textContent = message || '';
+    }
+
+    function getCurrentModeConfig() {
+      return FLOW_MODES[currentModeId];
+    }
+
+    function canSwitchFlowModeNow() {
+      return appState === APP_STATES.IDLE || appState === APP_STATES.PAUSED || appState === APP_STATES.FINISHED;
+    }
+
+    function showFlowModeNotice(message) {
+      if (!flowModeNotice) return;
+      flowModeNotice.textContent = message || '';
+    }
+
+    function syncFlowModeButtons() {
+      if (morningModeBtn) morningModeBtn.classList.toggle('active', currentModeId === 'morning');
+      if (nightModeBtn) nightModeBtn.classList.toggle('active', currentModeId === 'night');
+    }
+
+    function stopAudioForModeSwitch() {
+      clearMainTimer();
+      clearConfirmCountdown();
+      invalidatePendingVoiceCallbacks();
+      pauseAudio();
+      voice.pause();
+      voice.currentTime = 0;
+      stopSpeech();
+    }
+
+    function switchFlowMode(nextModeId) {
+      if (!FLOW_MODES[nextModeId] || nextModeId === currentModeId) return;
+      if (!canSwitchFlowModeNow()) {
+        showFlowModeNotice('流程進行中唔可以切換朝早 / 晚黑模式。');
+        return;
+      }
+
+      stopAudioForModeSwitch();
+      saveCurrentModeState();
+      loadModeState(nextModeId);
+      showFlowModeNotice(`已切換到${FLOW_MODES[nextModeId].label}模式。`);
+      applyDevModeText();
+      updateUI();
+    }
+
+    function resetStepStatusesFrom(startIndex) {
+      for (let i = startIndex; i < doneMap.length; i += 1) {
+        doneMap[i] = 'pending';
+      }
+    }
+
+    function formatTime(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+      const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function formatMinutes(totalSeconds) {
+      return `${Math.round(totalSeconds / 60)} 分鐘`;
+    }
+
+    function clampPercent(value) {
+      if (!Number.isFinite(value)) return 0;
+      return Math.min(100, Math.max(0, value));
+    }
+
+    function getCurrentStepProgressPercent() {
+      const totalSeconds = getStepDuration(currentIndex);
+      if (!totalSeconds || totalSeconds <= 0) return 0;
+      const percent = ((totalSeconds - timeLeft) / totalSeconds) * 100;
+      return clampPercent(percent);
+    }
+
+    function getStepDuration(index) {
+      return DEV_MODE ? DEV_STEP_SECONDS : steps[index].duration;
+    }
+
+    function getConfirmSeconds() {
+      return DEV_MODE ? DEV_CONFIRM_SECONDS : 10;
+    }
+
+    function getContinueSeconds() {
+      return DEV_MODE ? DEV_STEP_SECONDS : 30;
+    }
+
+    function getModeLabel() {
+      return DEV_MODE ? '【測試模式】' : '';
+    }
+
+    function setAppState(nextState, options = {}) {
+      appState = nextState;
+      if (!options.skipUI) updateUI();
+    }
+
+    function getBeepAudioContext() {
+      if (beepAudioContextUnavailable) return null;
+    
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        beepAudioContextUnavailable = true;
+        return null;
+      }
+    
+      try {
+        if (!beepAudioContext) {
+          beepAudioContext = new AudioContextClass();
+        }
+        return beepAudioContext;
+      } catch (e) {
+        beepAudioContextUnavailable = true;
+        console.log('beep context init failed', e);
+        return null;
+      }
+    }
+
+    function beep() {
+      try {
+        const ctx = getBeepAudioContext();
+        if (!ctx) return;
+    
+        const playTone = () => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+    
+          osc.type = 'sine';
+          osc.frequency.value = 880;
+          gain.gain.value = 0.05;
+    
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+    
+          const startAt = ctx.currentTime;
+          const stopAt = startAt + 0.18;
+    
+          osc.start(startAt);
+          osc.stop(stopAt);
+    
+          osc.onended = () => {
+            try { osc.disconnect(); } catch (_) {}
+            try { gain.disconnect(); } catch (_) {}
+          };
+        };
+    
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(() => {
+            try {
+              playTone();
+            } catch (e) {
+              console.log('beep play failed', e);
+            }
+          }).catch(err => {
+            console.log('beep resume failed', err);
+          });
+          return;
+        }
+    
+        playTone();
+      } catch (e) {
+        console.log('beep failed', e);
+      }
+    }
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function clearMainTimer() {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function invalidatePendingVoiceCallbacks() {
+      voicePhaseGeneration += 1;
+      return voicePhaseGeneration;
+    }
+
+    function clearConfirmCountdown(options = {}) {
+      const { invalidate = true } = options;
+      if (invalidate) confirmGeneration += 1;
+    
+      if (confirmTimerId) {
+        clearInterval(confirmTimerId);
+        confirmTimerId = null;
+      }
+      confirmLeft = getConfirmSeconds();
+      runStatus.classList.remove('waiting');
+    }
+
+    function getPlayedTracksForCategory(category) {
+      if (!playedTracksByCategory.has(category)) {
+        playedTracksByCategory.set(category, new Set());
+      }
+      return playedTracksByCategory.get(category);
+    }
+
+    function resetPlayedTracksForCategory(category) {
+      getPlayedTracksForCategory(category).clear();
+    }
+
+    function markTrackAsPlayed(category, src) {
+      if (!category || !src) return;
+      getPlayedTracksForCategory(category).add(src);
+    }
+
+    function getReservedTracksForCategory(category, excludeStepIndex = null) {
+      const reserved = new Set();
+
+      preparedMusicByStep.forEach((src, stepIndex) => {
+        if (!src || stepIndex === excludeStepIndex) return;
+        const step = steps[stepIndex];
+        if (!step) return;
+        const musicConfig = getStepMusicConfig(step);
+        if (musicConfig.enabled && musicConfig.category === category) {
+          reserved.add(src);
+        }
+      });
+
+      if (currentCategory === category && currentTrackSrc) {
+        reserved.add(currentTrackSrc);
+      }
+
+      return reserved;
+    }
+
+    function pickRandomTrack(category, excludedTracks = failedTracks, options = {}) {
+      const { reservedTracks = null, ignorePlayed = false } = options;
+      const list = musicLibrary[category] || [];
+      if (!list.length) return null;
+
+      const playedTracks = ignorePlayed ? new Set() : getPlayedTracksForCategory(category);
+      const reserved = reservedTracks instanceof Set ? reservedTracks : new Set(reservedTracks || []);
+
+      let availableList = list.filter(src => !excludedTracks.has(src) && !playedTracks.has(src) && !reserved.has(src));
+
+      if (!availableList.length && !ignorePlayed) {
+        resetPlayedTracksForCategory(category);
+        availableList = list.filter(src => !excludedTracks.has(src) && !reserved.has(src));
+      }
+
+      if (!availableList.length && reserved.size) {
+        availableList = list.filter(src => !excludedTracks.has(src) && !playedTracks.has(src));
+        if (!availableList.length && !ignorePlayed) {
+          resetPlayedTracksForCategory(category);
+          availableList = list.filter(src => !excludedTracks.has(src));
+        }
+      }
+
+      if (!availableList.length) return null;
+      if (availableList.length === 1) return availableList[0];
+
+      const nonRepeatingList = availableList.filter(src => src !== lastTrackSrc);
+      const candidates = nonRepeatingList.length ? nonRepeatingList : availableList;
+      const randomIndex = Math.floor(Math.random() * candidates.length);
+      return candidates[randomIndex];
+    }
+
+    function getTrackDisplayName(src) {
+      if (!src) return '目前未播放音樂';
+      const fileName = src.split('/').pop() || src;
+      return `目前播放：${fileName}`;
+    }
+
+    function getAbsoluteAudioUrl(src) {
+      if (!src) return '';
+      try {
+        return new URL(src, window.location.href).href;
+      } catch (err) {
+        return src;
+      }
+    }
+
+    function setAudioSourceIfChanged(audioElement, src) {
+      if (!audioElement || !src) return;
+      const targetUrl = getAbsoluteAudioUrl(src);
+      if (audioElement.src !== targetUrl) {
+        audioElement.src = src;
+      }
+    }
+
+    function preloadAudioSource(src) {
+      if (!src) return null;
+      const key = getAbsoluteAudioUrl(src);
+      if (preloadedAudioMap.has(key)) return preloadedAudioMap.get(key);
+
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = src;
+      try {
+        audio.load();
+      } catch (err) {
+        console.log('preload audio failed', err);
+      }
+      preloadedAudioMap.set(key, audio);
+      return audio;
+    }
+
+    function prepareStaticAudioAssets() {
+      preloadAudioSource('voice/time_up.mp3');
+      preloadAudioSource('voice/all_done.mp3');
+    }
+
+    function prepareVoiceForStepIndex(index) {
+      const step = steps[index];
+      if (!step || !step.voice) return;
+      preloadAudioSource(step.voice);
+    }
+
+    function prepareMusicForStepIndex(index) {
+      const step = steps[index];
+      if (!step) return;
+
+      const musicConfig = getStepMusicConfig(step);
+      if (!musicConfig.enabled || !musicConfig.category) return;
+
+      const category = musicConfig.category;
+      const existingSrc = preparedMusicByStep.get(index);
+      if (existingSrc && !failedTracks.has(existingSrc) && !getPlayedTracksForCategory(category).has(existingSrc)) {
+        preloadAudioSource(existingSrc);
+        return;
+      }
+
+      preparedMusicByStep.delete(index);
+      const reservedTracks = getReservedTracksForCategory(category, index);
+      const src = pickRandomTrack(category, failedTracks, { reservedTracks });
+      if (!src) return;
+
+      preparedMusicByStep.set(index, src);
+      preloadAudioSource(src);
+    }
+
+    function prepareStepMedia(index) {
+      if (index < 0 || index >= steps.length) return;
+      prepareVoiceForStepIndex(index);
+      prepareMusicForStepIndex(index);
+    }
+
+    function prepareLikelyNeededAudio() {
+      prepareStaticAudioAssets();
+      prepareStepMedia(currentIndex);
+      prepareStepMedia(currentIndex + 1);
+    }
+
+    async function warmAudioPlaybackSystem() {
+      if (audioWarmupStarted) return;
+      audioWarmupStarted = true;
+
+      prepareLikelyNeededAudio();
+
+      try {
+        const ctx = getBeepAudioContext();
+        if (ctx && ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+      } catch (err) {
+        console.log('audio context warmup failed', err);
+      }
+
+      try {
+        voice.preload = 'auto';
+        bgm.preload = 'auto';
+
+        const step = steps[currentIndex];
+        if (step && step.voice) {
+          setAudioSourceIfChanged(voice, step.voice);
+          if (typeof voice.load === 'function') {
+            voice.load();
+          }
+        }
+      } catch (err) {
+        console.log('audio element warmup failed', err);
+      }
+    }
+
+
+    function currentStepHasMusic() {
+      const step = steps[currentIndex];
+      if (!step) return false;
+      const musicConfig = getStepMusicConfig(step);
+      const list = musicLibrary[musicConfig.category] || [];
+      return Boolean(musicConfig.enabled && musicConfig.category && list.length);
+    }
+
+    function canSwitchTrackNow() {
+      return appState === APP_STATES.RUNNING && currentStepHasMusic() && !!currentCategory && !!currentTrackSrc;
+    }
+
+    function updateTrackControlUI() {
+      if (!nowPlaying) return;
+      nowPlaying.textContent = nowPlaying.textContent || UI_TEXT.noMusic;
+      if (nextTrackBtn) {
+        nextTrackBtn.disabled = !canSwitchTrackNow();
+      }
+    }
+
+    function switchToNextTrack() {
+      if (!currentStepHasMusic()) {
+        stopBgm(UI_TEXT.noMusic);
+        updateTrackControlUI();
+        return;
+      }
+      if (!currentCategory) return;
+
+      const reservedTracks = getReservedTracksForCategory(currentCategory);
+      const nextTrackSrc = pickRandomTrack(currentCategory, failedTracks, { reservedTracks });
+      if (!nextTrackSrc) {
+        stopBgm(`呢步嘅音樂分類「${currentCategory}」暫時冇可播放歌曲`);
+        updateTrackControlUI();
+        return;
+      }
+
+      currentTrackSrc = nextTrackSrc;
+      lastTrackSrc = currentTrackSrc;
+      playCurrentTrack();
+      prepareStepMedia(currentIndex + 1);
+      updateTrackControlUI();
+    }
+
+
+    function canPickStepTargetNow() {
+      return appState === APP_STATES.IDLE || appState === APP_STATES.PAUSED || appState === APP_STATES.FINISHED;
+    }
+
+    function showStepPickNotice(message) {
+      if (!stepPickNotice) return;
+      stepPickNotice.textContent = message || '';
+    }
+
+    function clearPendingJumpTarget(options = {}) {
+      const { keepNotice = false } = options;
+      pendingJumpTargetIndex = null;
+      if (!keepNotice) showStepPickNotice('');
+    }
+
+    function setPendingJumpTarget(targetIndex) {
+      if (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= steps.length) return;
+
+      if (!canPickStepTargetNow()) {
+        showStepPickNotice('而家状态唔适合拣目标步骤，请先暂停或者停返喺可切换状态。');
+        updateUI();
+        return;
+      }
+
+      if (targetIndex === currentIndex) {
+        clearPendingJumpTarget();
+        showStepPickNotice('而家已经系呢一步，唔需要跳。');
+        updateUI();
+        return;
+      }
+
+      if (pendingJumpTargetIndex === targetIndex) {
+        clearPendingJumpTarget();
+        showStepPickNotice('已取消目标步骤选择。');
+        updateUI();
+        return;
+      }
+
+      if (appState === APP_STATES.FINISHED) {
+        finishBox.classList.remove('show');
+        setAppState(APP_STATES.IDLE, { skipUI: true });
+      }
+
+      pendingJumpTargetIndex = targetIndex;
+      showStepPickNotice(`已选择第 ${targetIndex + 1} 步，撳「開始」先正式跳过去。`);
+      updateUI();
+    }
+
+    function applyJumpStateToDoneMap(targetIndex) {
+      const nextDoneMap = doneMap.slice();
+      for (let i = 0; i < targetIndex; i += 1) {
+        if (nextDoneMap[i] === 'pending') {
+          nextDoneMap[i] = 'skipped';
+        }
+      }
+      for (let i = targetIndex; i < nextDoneMap.length; i += 1) {
+        nextDoneMap[i] = 'pending';
+      }
+      doneMap = nextDoneMap;
+    }
+
+    function confirmPendingJumpAndStart() {
+      if (!Number.isInteger(pendingJumpTargetIndex)) {
+        startCurrentStepSequence();
+        return;
+      }
+
+      if (!canPickStepTargetNow()) {
+        showStepPickNotice('而家状态唔适合确认跳步骤，请先停返喺可切换状态。');
+        updateUI();
+        return;
+      }
+
+      const targetIndex = pendingJumpTargetIndex;
+      const wasFinished = appState === APP_STATES.FINISHED;
+
+      pauseEverything(APP_STATES.IDLE);
+      if (wasFinished) {
+        routineStartAt = null;
+      }
+
+      applyJumpStateToDoneMap(targetIndex);
+      currentIndex = targetIndex;
+      timeLeft = getStepDuration(currentIndex);
+      finishBox.classList.remove('show');
+      clearPendingJumpTarget({ keepNotice: true });
+      showStepPickNotice(`已确认跳去第 ${targetIndex + 1} 步，前面未完成步骤已记为已跳过。`);
+      prepareLikelyNeededAudio();
+      updateUI();
+      beep();
+      warmAudioPlaybackSystem();
+      startCurrentStepSequence();
+    }
+
+
+    // =========================
+    // 5. 音頻控制區
+    // =========================
+    function stopBgm(message = UI_TEXT.noMusic) {
+      currentCategory = null;
+      currentTrackSrc = null;
+      musicRetryCount = 0;
+      currentTrackAttemptToken += 1;
+      bgm.pause();
+      try { bgm.removeAttribute('src'); } catch (_) {}
+      if (typeof bgm.load === 'function') {
+        try { bgm.load(); } catch (_) {}
+      }
+      nowPlaying.textContent = message;
+      updateTrackControlUI();
+    }
+
+    function resetMusicRetryState() {
+      failedTracks = new Set();
+      musicRetryCount = 0;
+    }
+
+    function handleMusicPlaybackFailure(failedSrc, attemptToken) {
+      if (!failedSrc) return;
+      if (attemptToken !== currentTrackAttemptToken) return;
+    
+      console.log('bgm play/load failed', failedSrc);
+      failedTracks.add(failedSrc);
+    
+      if (!currentCategory || musicRetryCount >= MAX_MUSIC_RETRY_COUNT) {
+        stopBgm(UI_TEXT.musicFailed);
+        return;
+      }
+    
+      const nextTrackSrc = pickRandomTrack(currentCategory, failedTracks);
+      if (!nextTrackSrc) {
+        stopBgm(UI_TEXT.musicFailed);
+        return;
+      }
+    
+      musicRetryCount += 1;
+      currentTrackSrc = nextTrackSrc;
+      lastTrackSrc = currentTrackSrc;
+      playCurrentTrack();
+    }
+
+    function playCurrentTrack() {
+      if (!currentTrackSrc) return;
+    
+      const attemptToken = currentTrackAttemptToken + 1;
+      currentTrackAttemptToken = attemptToken;
+    
+      nowPlaying.textContent = getTrackDisplayName(currentTrackSrc);
+      updateTrackControlUI();
+      bgm.pause();
+      bgm.currentTime = 0;
+      setAudioSourceIfChanged(bgm, currentTrackSrc);
+
+      const markCurrentTrack = () => {
+        markTrackAsPlayed(currentCategory, currentTrackSrc);
+        updateTrackControlUI();
+      };
+
+      const playPromise = bgm.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(() => {
+          markCurrentTrack();
+        }).catch(err => {
+          console.log('bgm play failed', err);
+          handleMusicPlaybackFailure(currentTrackSrc, attemptToken);
+        });
+        return;
+      }
+
+      markCurrentTrack();
+    }
+
+    function getStepMusicConfig(step) {
+      return step.music || { enabled: false, category: null };
+    }
+
+    function playStepAudio(step) {
+      resetMusicRetryState();
+    
+      const musicConfig = getStepMusicConfig(step);
+      if (!musicConfig.enabled) {
+        stopBgm(UI_TEXT.noMusic);
+        return;
+      }
+    
+      const category = musicConfig.category;
+      if (!category) {
+        stopBgm('呢步嘅音樂分類未設定');
+        return;
+      }
+    
+      const list = musicLibrary[category] || [];
+      if (!list.length) {
+        stopBgm(`呢步嘅音樂分類「${category}」未配置歌曲`);
+        return;
+      }
+    
+      currentCategory = category;
+      const preparedSrc = preparedMusicByStep.get(currentIndex);
+      const preparedUsable = preparedSrc
+        && !failedTracks.has(preparedSrc)
+        && !getPlayedTracksForCategory(currentCategory).has(preparedSrc);
+      currentTrackSrc = preparedUsable ? preparedSrc : pickRandomTrack(currentCategory);
+      if (!currentTrackSrc) {
+        stopBgm(`呢步嘅音樂分類「${category}」暫時冇可播放歌曲`);
+        return;
+      }
+    
+      preparedMusicByStep.delete(currentIndex);
+      musicRetryCount = 1;
+      lastTrackSrc = currentTrackSrc;
+      playCurrentTrack();
+      prepareStepMedia(currentIndex + 1);
+    }
+
+    function playVoice(src, onEnd) {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        voice.onended = null;
+        voice.onerror = null;
+        if (onEnd) onEnd();
+      };
+    
+      if (!src) {
+        finish();
+        return;
+      }
+    
+      preloadAudioSource(src);
+    
+      try {
+        voice.pause();
+        voice.currentTime = 0;
+        setAudioSourceIfChanged(voice, src);
+        voice.onended = finish;
+        voice.onerror = err => {
+          console.log('voice load failed', err);
+          finish();
+        };
+    
+        const playPromise = voice.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(err => {
+            console.log('voice play failed', err);
+            finish();
+          });
+        }
+      } catch (err) {
+        console.log('voice setup failed', err);
+        finish();
+      }
+    }
+
+    function pauseAudio() {
+      bgm.pause();
+    }
+
+    function resumeAudio() {
+      if (!currentTrackSrc) return;
+      bgm.play().catch(err => {
+        console.log('bgm resume failed', err);
+      });
+    }
+
+    // =========================
+    // 6. 流程控制區
+    // =========================
+    function pauseEverything(nextState = APP_STATES.PAUSED) {
+      clearMainTimer();
+      clearConfirmCountdown();
+      invalidatePendingVoiceCallbacks();
+      pauseAudio();
+      voice.pause();
+      voice.currentTime = 0;
+      stopSpeech();
+      setAppState(nextState);
+    }
+
+    function startMainTimer() {
+      clearMainTimer();
+      setAppState(APP_STATES.RUNNING, { skipUI: true });
+    
+      timerId = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft -= 1;
+          timerText.textContent = formatTime(timeLeft);
+          updateProgressBar();
+        }
+    
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          timerText.textContent = formatTime(timeLeft);
+          updateProgressBar();
+          handleStepTimeout();
+        }
+      }, 1000);
+    
+      updateUI();
+    }
+
+    function startConfirmCountdown(targetGeneration) {
+      if (appState !== APP_STATES.WAITING_CONFIRM) return;
+      if (confirmTimerId) return;
+      if (targetGeneration !== confirmGeneration) return;
+    
+      runStatus.classList.add('waiting');
+    
+      confirmTimerId = setInterval(() => {
+        confirmLeft -= 1;
+        updateUI();
+    
+        if (confirmLeft <= 0) {
+          clearConfirmCountdown();
+          moveToNextStep(true);
+        }
+      }, 1000);
+    
+      updateUI();
+    }
+
+    function startCurrentStepSequence() {
+      if (!routineStartAt) routineStartAt = Date.now();
+    
+      clearConfirmCountdown();
+      invalidatePendingVoiceCallbacks();
+      stopSpeech();
+      pauseAudio();
+      voice.pause();
+      voice.currentTime = 0;
+    
+      const step = steps[currentIndex];
+      const stepIndex = currentIndex;
+      const phaseToken = voicePhaseGeneration;
+    
+      setAppState(APP_STATES.STEP_VOICE);
+    
+      playVoice(step.voice, () => {
+        if (phaseToken !== voicePhaseGeneration) return;
+        if (appState !== APP_STATES.STEP_VOICE) return;
+        if (currentIndex !== stepIndex) return;
+    
+        playStepAudio(step);
+        startMainTimer();
+      });
+    }
+
+    function handleStepTimeout() {
+      clearMainTimer();
+      pauseAudio();
+      voice.pause();
+      voice.currentTime = 0;
+      stopSpeech();
+      beep();
+      clearConfirmCountdown();
+      const thisConfirmGeneration = confirmGeneration;
+      const phaseToken = ++voicePhaseGeneration;
+      confirmLeft = getConfirmSeconds();
+    
+      setAppState(APP_STATES.TIMEOUT_PROMPT);
+    
+      playVoice('voice/time_up.mp3', () => {
+        if (phaseToken !== voicePhaseGeneration) return;
+        if (appState !== APP_STATES.TIMEOUT_PROMPT) return;
+    
+        setAppState(APP_STATES.WAITING_CONFIRM);
+        startConfirmCountdown(thisConfirmGeneration);
+      });
+    }
+
+    function continueCurrentStepAfterTimeout() {
+      if (appState !== APP_STATES.WAITING_CONFIRM) return;
+    
+      clearConfirmCountdown();
+      invalidatePendingVoiceCallbacks();
+      voice.pause();
+      voice.currentTime = 0;
+      stopSpeech();
+      timeLeft += getContinueSeconds();
+      resumeAudio();
+      startMainTimer();
+    }
+
+    function loadStep(index) {
+      pauseEverything(APP_STATES.IDLE);
+      currentIndex = index;
+      timeLeft = getStepDuration(currentIndex);
+      clearPendingJumpTarget();
+      finishBox.classList.remove('show');
+      prepareLikelyNeededAudio();
+      updateUI();
+      beep();
+    }
+
+    function moveToNextStep(autoStart = true, skipped = false) {
+      if (skipped) {
+        doneMap[currentIndex] = 'skipped';
+      } else if (doneMap[currentIndex] === 'pending') {
+        doneMap[currentIndex] = 'done';
+      }
+    
+      if (currentIndex < steps.length - 1) {
+        loadStep(currentIndex + 1);
+        if (autoStart) {
+          startCurrentStepSequence();
+        }
+      } else {
+        finishRoutine();
+      }
+    }
+
+    function finishRoutine() {
+      pauseEverything(APP_STATES.FINISHED);
+      clearPendingJumpTarget();
+      doneMap[currentIndex] = doneMap[currentIndex] === 'skipped' ? 'skipped' : 'done';
+      renderList();
+      const totalMinutes = routineStartAt
+        ? Math.round((Date.now() - routineStartAt) / 60000)
+        : 0;
+      finishText.textContent = `你今日完成咗 ${steps.length} 步。由第一次開始計，大約用咗 ${totalMinutes} 分鐘。`;
+      finishBox.classList.add('show');
+      runStatus.textContent = UI_TEXT.finished;
+      runStatus.classList.remove('waiting');
+      updateButtonStates();
+      beep();
+      playVoice('voice/all_done.mp3');
+    }
+
+    // =========================
+    // 7. UI 更新區
+    // =========================
+    function applyDevModeText() {
+      const modeLabel = getModeLabel();
+      const modeConfig = getCurrentModeConfig();
+      document.title = `${modeConfig.title} ${APP_VERSION}${modeLabel}`;
+      appTitle.textContent = modeConfig.title;
+      appSub.textContent = `${APP_VERSION}｜${modeConfig.label}模式${modeLabel}`;
+      document.body.setAttribute('data-flow-mode', currentModeId);
+      syncDevModeSwitchUI();
+      syncFlowModeButtons();
+    }
+
+    function updateProgressBar() {
+      if (!stepProgressBar) return;
+      stepProgressBar.style.width = `${getCurrentStepProgressPercent()}%`;
+    }
+
+    function isInteractionLocked() {
+      return appState === APP_STATES.STEP_VOICE || appState === APP_STATES.TIMEOUT_PROMPT;
+    }
+
+    function getStartPauseButtonText() {
+      switch (appState) {
+        case APP_STATES.RUNNING:
+          return '暂停';
+        case APP_STATES.PAUSED:
+          return '继续';
+        case APP_STATES.WAITING_CONFIRM:
+          return `继续呢一步 +${getContinueSeconds()}秒`;
+        case APP_STATES.STEP_VOICE:
+        case APP_STATES.TIMEOUT_PROMPT:
+          return '请稍等';
+        case APP_STATES.FINISHED:
+          return pendingJumpTargetIndex !== null ? '開始' : '已完成';
+        case APP_STATES.IDLE:
+        default:
+          return '开始';
+      }
+    }
+
+    function updateStartPauseButtonText() {
+      startPauseBtn.textContent = getStartPauseButtonText();
+    }
+
+    function updateButtonStates() {
+      updateStartPauseButtonText();
+    
+      if (appState === APP_STATES.FINISHED) {
+        startPauseBtn.disabled = pendingJumpTargetIndex === null;
+        doneBtn.disabled = true;
+        prevBtn.disabled = true;
+        skipBtn.disabled = true;
+        restartBtn.disabled = false;
+        return;
+      }
+    
+      if (isInteractionLocked()) {
+        startPauseBtn.disabled = true;
+        doneBtn.disabled = true;
+        prevBtn.disabled = true;
+        skipBtn.disabled = true;
+        restartBtn.disabled = true;
+        return;
+      }
+    
+      startPauseBtn.disabled = false;
+      doneBtn.disabled = false;
+      skipBtn.disabled = false;
+      restartBtn.disabled = false;
+      prevBtn.disabled = currentIndex === 0;
+    }
+
+    function renderList() {
+      stepList.innerHTML = '';
+      const canPickNow = canPickStepTargetNow();
+
+      steps.forEach((step, idx) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        const isCurrentStep = idx === currentIndex;
+        const isPendingTarget = pendingJumpTargetIndex === idx && idx !== currentIndex;
+
+        if (isCurrentStep) div.classList.add('active');
+        if (doneMap[idx] === 'done') div.classList.add('done');
+        if (doneMap[idx] === 'skipped') div.classList.add('skipped');
+        if (isPendingTarget) div.classList.add('pending-target');
+        if (canPickNow) div.classList.add('selectable');
+
+        let stateText = '未做';
+        if (doneMap[idx] === 'done') stateText = '已完成';
+        else if (doneMap[idx] === 'skipped') stateText = '已跳過';
+        else if (isPendingTarget) stateText = '已選中待開始';
+        else if (isCurrentStep) {
+          switch (appState) {
+            case APP_STATES.STEP_VOICE:
+              stateText = '語音提示中';
+              break;
+            case APP_STATES.RUNNING:
+              stateText = '進行中';
+              break;
+            case APP_STATES.PAUSED:
+              stateText = '已暫停';
+              break;
+            case APP_STATES.TIMEOUT_PROMPT:
+              stateText = '時間到提示中';
+              break;
+            case APP_STATES.WAITING_CONFIRM:
+              stateText = `等緊確認（${confirmLeft}）`;
+              break;
+            case APP_STATES.FINISHED:
+              stateText = '已完成';
+              break;
+            case APP_STATES.IDLE:
+            default:
+              stateText = '未開始';
+              break;
+          }
+        }
+
+        div.innerHTML = `
+          <div>
+            <div class="item-name">${idx + 1}. ${step.name}</div>
+            <div class="item-meta">建議時間：${formatMinutes(getStepDuration(idx))}</div>
+          </div>
+          <div class="item-meta">${stateText}</div>
+        `;
+
+        div.addEventListener('click', () => {
+          setPendingJumpTarget(idx);
+        });
+
+        stepList.appendChild(div);
+      });
+    }
+
+
+
+    function updateStatusText() {
+      switch (appState) {
+        case APP_STATES.STEP_VOICE:
+          runStatus.textContent = '語音提示中';
+          runStatus.classList.remove('waiting');
+          break;
+        case APP_STATES.RUNNING:
+          runStatus.textContent = UI_TEXT.running;
+          runStatus.classList.remove('waiting');
+          break;
+        case APP_STATES.PAUSED:
+          runStatus.textContent = UI_TEXT.paused;
+          runStatus.classList.remove('waiting');
+          break;
+        case APP_STATES.TIMEOUT_PROMPT:
+          runStatus.textContent = '時間到，提示語音中';
+          runStatus.classList.add('waiting');
+          break;
+        case APP_STATES.WAITING_CONFIRM:
+          runStatus.textContent = `時間到：${confirmLeft} 秒後自動下一步；撳「開始 / 暫停」可繼續呢一步（+${getContinueSeconds()} 秒）`;
+          runStatus.classList.add('waiting');
+          break;
+        case APP_STATES.FINISHED:
+          runStatus.textContent = UI_TEXT.finished;
+          runStatus.classList.remove('waiting');
+          break;
+        case APP_STATES.IDLE:
+        default:
+          runStatus.textContent = UI_TEXT.idle;
+          runStatus.classList.remove('waiting');
+          break;
+      }
+    }
+
+    function updateUI() {
+      const step = steps[currentIndex];
+      stepCount.textContent = `第 ${currentIndex + 1} / ${steps.length} 步`;
+      stepName.textContent = step.name;
+      timerText.textContent = formatTime(timeLeft);
+      updateProgressBar();
+      stepHint.textContent = `建議時間：${formatMinutes(getStepDuration(currentIndex))}。時間到會提醒你，${getConfirmSeconds()} 秒內唔撳就自動下一步。`;
+      if (appState !== APP_STATES.FINISHED) {
+        finishBox.classList.remove('show');
+      }
+      updateStatusText();
+      updateButtonStates();
+      renderList();
+      updateTrackControlUI();
+    }
+
+    // =========================
+    // 8. 事件綁定區
+    // =========================
+    bgm.addEventListener('ended', () => {
+      if (!currentCategory) return;
+    
+      musicRetryCount = 1;
+      currentTrackSrc = pickRandomTrack(currentCategory);
+      if (!currentTrackSrc) return;
+    
+      lastTrackSrc = currentTrackSrc;
+      playCurrentTrack();
+    });
+
+    bgm.addEventListener('error', () => {
+      if (!currentTrackSrc) return;
+      handleMusicPlaybackFailure(currentTrackSrc, currentTrackAttemptToken);
+    });
+
+    morningModeBtn.addEventListener('click', () => {
+      switchFlowMode('morning');
+    });
+
+    nightModeBtn.addEventListener('click', () => {
+      switchFlowMode('night');
+    });
+
+    devModeToggle.addEventListener('change', () => {
+      const nextMode = devModeToggle.checked;
+    
+      if (!isModeSwitchAllowedNow()) {
+        devModeToggle.checked = DEV_MODE;
+        showModeNotice('流程進行中唔會即時切換模式。請先撳「重新開始」，再切換測試模式。');
+        return;
+      }
+    
+      DEV_MODE = nextMode;
+      saveDevModePreference(DEV_MODE);
+      timeLeft = getStepDuration(currentIndex);
+      confirmLeft = getConfirmSeconds();
+      showModeNotice(DEV_MODE ? '測試模式已開啟。' : '測試模式已關閉。');
+      applyDevModeText();
+      updateUI();
+    });
+
+    nextTrackBtn.addEventListener('click', () => {
+      if (!canSwitchTrackNow()) return;
+      switchToNextTrack();
+    });
+
+
+
+    startPauseBtn.addEventListener('click', () => {
+      switch (appState) {
+        case APP_STATES.IDLE:
+          if (pendingJumpTargetIndex !== null) {
+            confirmPendingJumpAndStart();
+            return;
+          }
+          warmAudioPlaybackSystem();
+          startCurrentStepSequence();
+          return;
+        case APP_STATES.RUNNING:
+          pauseEverything(APP_STATES.PAUSED);
+          return;
+        case APP_STATES.PAUSED:
+          if (pendingJumpTargetIndex !== null) {
+            confirmPendingJumpAndStart();
+            return;
+          }
+          resumeAudio();
+          startMainTimer();
+          return;
+        case APP_STATES.WAITING_CONFIRM:
+          continueCurrentStepAfterTimeout();
+          return;
+        case APP_STATES.FINISHED:
+          if (pendingJumpTargetIndex !== null) {
+            confirmPendingJumpAndStart();
+          }
+          return;
+        default:
+          return;
+      }
+    });
+
+    doneBtn.addEventListener('click', () => {
+      if (appState === APP_STATES.STEP_VOICE || appState === APP_STATES.TIMEOUT_PROMPT || appState === APP_STATES.FINISHED) return;
+      moveToNextStep(true, false);
+    });
+
+    skipBtn.addEventListener('click', () => {
+      if (appState === APP_STATES.STEP_VOICE || appState === APP_STATES.TIMEOUT_PROMPT || appState === APP_STATES.FINISHED) return;
+      moveToNextStep(true, true);
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (appState === APP_STATES.STEP_VOICE || appState === APP_STATES.TIMEOUT_PROMPT || appState === APP_STATES.FINISHED) return;
+      if (currentIndex > 0) {
+        const targetIndex = currentIndex - 1;
+        resetStepStatusesFrom(targetIndex);
+        loadStep(targetIndex);
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      if (appState === APP_STATES.STEP_VOICE || appState === APP_STATES.TIMEOUT_PROMPT) return;
+    
+      pauseEverything(APP_STATES.IDLE);
+      currentIndex = 0;
+      timeLeft = getStepDuration(0);
+      routineStartAt = null;
+      doneMap = Array(steps.length).fill('pending');
+      clearPendingJumpTarget();
+      finishBox.classList.remove('show');
+      showFlowModeNotice('');
+      updateUI();
+    });
+
+    // =========================
+    // 9. 初始化區
+    // =========================
+    initVolumeControls();
+    loadModeState(currentModeId);
+    prepareLikelyNeededAudio();
+    applyDevModeText();
+    updateUI();
+    </script>
+</body>
+</html>
